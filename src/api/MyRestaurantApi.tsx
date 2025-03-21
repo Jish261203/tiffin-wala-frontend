@@ -19,7 +19,7 @@ export const useGetMyRestaurant = () => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to get restaurant");
+      throw new Error("Failed to get tiffin");
     }
     return response.json();
   };
@@ -49,7 +49,7 @@ export const useCreateMyRestaurant = () => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to create restaurant");
+      throw new Error("Failed to create tiffin");
     }
 
     return response.json();
@@ -63,11 +63,11 @@ export const useCreateMyRestaurant = () => {
   } = useMutation(createMyRestaurantRequest);
 
   if (isSuccess) {
-    toast.success("Restaurant created!");
+    toast.success("Tffin created!");
   }
 
   if (error) {
-    toast.error("Unable to update restaurant");
+    toast.error("Unable to update tiffin");
   }
 
   return { createRestaurant, isLoading };
@@ -90,7 +90,7 @@ export const useUpdateMyRestaurant = () => {
     });
 
     if (!response) {
-      throw new Error("Failed to update restaurant");
+      throw new Error("Failed to update tiffin");
     }
 
     return response.json();
@@ -104,11 +104,11 @@ export const useUpdateMyRestaurant = () => {
   } = useMutation(updateRestaurantRequest);
 
   if (isSuccess) {
-    toast.success("Restaurant Updated");
+    toast.success("Tiffin Updated");
   }
 
   if (error) {
-    toast.error("Unable to update restaurant");
+    toast.error("Unable to update tiffin");
   }
 
   return { updateRestaurant, isLoading };

@@ -23,7 +23,7 @@ const ManageRestaurantPage = () => {
     <Tabs defaultValue="orders">
       <TabsList>
         <TabsTrigger value="orders">Orders</TabsTrigger>
-        <TabsTrigger value="manage-restaurant">Manage Restaurant</TabsTrigger>
+        <TabsTrigger value="manage-restaurant">Manage Tiffin</TabsTrigger>
       </TabsList>
       <TabsContent
         value="orders"
