@@ -8,6 +8,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useFormContext } from "react-hook-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Props = {
   index: number;
@@ -48,6 +55,36 @@ const MenuItemInput = ({ index, removeMenuItem }: Props) => {
             <FormControl>
               <Input {...field} placeholder="8.00" className="bg-white" />
             </FormControl>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name={`menuItems.${index}.day`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="flex items-center gap-1">
+              Day <FormMessage />
+            </FormLabel>
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || "Monday"}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a day" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Monday">Monday</SelectItem>
+                <SelectItem value="Tuesday">Tuesday</SelectItem>
+                <SelectItem value="Wednesday">Wednesday</SelectItem>
+                <SelectItem value="Thursday">Thursday</SelectItem>
+                <SelectItem value="Friday">Friday</SelectItem>
+                <SelectItem value="Saturday">Saturday</SelectItem>
+                <SelectItem value="Sunday">Sunday</SelectItem>
+              </SelectContent>
+            </Select>
           </FormItem>
         )}
       />

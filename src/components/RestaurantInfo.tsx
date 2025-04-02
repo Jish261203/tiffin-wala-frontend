@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Dot } from "lucide-react";
+import { formatPrice } from "@/utils/format";
 
 type Props = {
   restaurant: Restaurant;
@@ -14,7 +15,7 @@ type Props = {
 
 const RestaurantInfo = ({ restaurant }: Props) => {
   return (
-    <Card className="border-sla">
+    <Card>
       <CardHeader>
         <CardTitle className="text-3xl font-bold tracking-tight">
           {restaurant.restaurantName}
@@ -24,12 +25,13 @@ const RestaurantInfo = ({ restaurant }: Props) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex">
-        {restaurant.cuisines.map((item, index) => (
-          <span className="flex">
-            <span>{item}</span>
-            {index < restaurant.cuisines.length - 1 && <Dot />}
-          </span>
-        ))}
+        <div className="flex gap-2 text-muted-foreground">
+          <span>{restaurant.cuisines.join(", ")}</span>
+          <Dot />
+          <span>Delivery Fee: {formatPrice(restaurant.deliveryPrice)}</span>
+          <Dot />
+          <span>Estimated Time: {restaurant.estimatedDeliveryTime} mins</span>
+        </div>
       </CardContent>
     </Card>
   );

@@ -11,6 +11,15 @@ type Props = {
   removeFromCart: (cartItem: CartItem) => void;
 };
 
+// Format price from paise to rupees with proper formatting
+const formatPrice = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+  }).format(amount / 100);
+};
+
 const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
   const getTotalCost = () => {
     const totalInPence = cartItems.reduce(
@@ -20,7 +29,7 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
 
     const totalWithDelivery = totalInPence + restaurant.deliveryPrice;
 
-    return (totalWithDelivery / 100).toFixed(2);
+    return totalWithDelivery;
   };
 
   return (
@@ -28,12 +37,12 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
       <CardHeader>
         <CardTitle className="text-2xl font-bold tracking-tight flex justify-between">
           <span>Your Order</span>
-          <span>£{getTotalCost()}</span>
+          <span>{formatPrice(getTotalCost())}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         {cartItems.map((item) => (
-          <div className="flex justify-between">
+          <div key={item._id} className="flex justify-between">
             <span>
               <Badge variant="outline" className="mr-2">
                 {item.quantity}
@@ -47,14 +56,14 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
                 size={20}
                 onClick={() => removeFromCart(item)}
               />
-              £{((item.price * item.quantity) / 100).toFixed(2)}
+              {formatPrice(item.price * item.quantity)}
             </span>
           </div>
         ))}
         <Separator />
         <div className="flex justify-between">
           <span>Delivery</span>
-          <span>£{(restaurant.deliveryPrice / 100).toFixed(2)}</span>
+          <span>{formatPrice(restaurant.deliveryPrice)}</span>
         </div>
         <Separator />
       </CardContent>

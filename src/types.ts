@@ -11,6 +11,7 @@ export type MenuItem = {
   _id: string;
   name: string;
   price: number;
+  day: string;
 };
 
 export type Restaurant = {
@@ -42,6 +43,7 @@ export type Order = {
     menuItemId: string;
     name: string;
     quantity: string;
+    price: number;
   }[];
   deliveryDetails: {
     name: string;

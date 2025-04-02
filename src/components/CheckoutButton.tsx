@@ -7,6 +7,7 @@ import UserProfileForm, {
   UserFormData,
 } from "@/forms/user-profile-form/UserProfileForm";
 import { useGetMyUser } from "@/api/MyUserApi";
+import { useState } from "react";
 
 type Props = {
   onCheckout: (userFormData: UserFormData) => void;
@@ -24,6 +25,8 @@ const CheckoutButton = ({ onCheckout, disabled, isLoading }: Props) => {
   const { pathname } = useLocation();
 
   const { currentUser, isLoading: isGetUserLoading } = useGetMyUser();
+
+  const [isOpen, setIsOpen] = useState(false);
 
   const onLogin = async () => {
     await loginWithRedirect({
@@ -45,17 +48,25 @@ const CheckoutButton = ({ onCheckout, disabled, isLoading }: Props) => {
     return <LoadingButton />;
   }
 
+  const handleCheckout = async (userFormData: UserFormData) => {
+    setIsOpen(false);
+    await onCheckout(userFormData);
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button disabled={disabled} className="bg-orange-500 flex-1">
-          Go to checkout
+        <Button
+          disabled={disabled || isLoading}
+          className="bg-orange-500 flex-1"
+        >
+          {isLoading ? "Processing..." : "Go to checkout"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[425px] md:min-w-[700px] bg-gray-50">
         <UserProfileForm
           currentUser={currentUser}
-          onSave={onCheckout}
+          onSave={handleCheckout}
           isLoading={isGetUserLoading}
           title="Confirm Deliery Details"
           buttonText="Continue to payment"

@@ -31,7 +31,7 @@ const ManageRestaurantPage = () => {
       >
         <h2 className="text-2xl font-bold">{orders?.length} active orders</h2>
         {orders?.map((order) => (
-          <OrderItemCard order={order} />
+          <OrderItemCard key={order._id} order={order} />
         ))}
       </TabsContent>
       <TabsContent value="manage-restaurant">

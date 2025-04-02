@@ -40,6 +40,7 @@ type CheckoutSessionRequest = {
     menuItemId: string;
     name: string;
     quantity: string;
+    price: number;
   }[];
   deliveryDetails: {
     email: string;
@@ -48,6 +49,7 @@ type CheckoutSessionRequest = {
     city: string;
   };
   restaurantId: string;
+  totalAmount: number;
 };
 
 export const useCreateCheckoutSession = () => {
@@ -56,25 +58,38 @@ export const useCreateCheckoutSession = () => {
   const createCheckoutSessionRequest = async (
     checkoutSessionRequest: CheckoutSessionRequest
   ) => {
-    const accessToken = await getAccessTokenSilently();
+    try {
+      const accessToken = await getAccessTokenSilently();
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/order/checkout/create-checkout-session`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(checkoutSessionRequest),
+      const response = await fetch(
+        `${API_BASE_URL}/api/order/checkout/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(checkoutSessionRequest),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Unable to create checkout session");
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Unable to create checkout session");
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch")) {
+          throw new Error(
+            "Unable to connect to the server. Please make sure the backend is running and accessible at http://localhost:7000"
+          );
+        }
+        throw error;
+      }
+      throw new Error("An unexpected error occurred");
     }
-
-    return response.json();
   };
 
   const {
@@ -82,15 +97,22 @@ export const useCreateCheckoutSession = () => {
     isLoading,
     error,
     reset,
-  } = useMutation(createCheckoutSessionRequest);
+  } = useMutation(createCheckoutSessionRequest, {
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    onMutate: () => {
+      // Disable the checkout button while processing
+      return { isProcessing: true };
+    },
+    onError: (error) => {
+      toast.error(error.toString());
+      reset();
+    },
+    onSettled: () => {
+      // Re-enable the checkout button
+      return { isProcessing: false };
+    }
+  });
 
-  if (error) {
-    toast.error(error.toString());
-    reset();
-  }
-
-  return {
-    createCheckoutSession,
-    isLoading,
-  };
+  return { createCheckoutSession, isLoading };
 };

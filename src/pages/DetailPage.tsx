@@ -1,15 +1,22 @@
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { useGetRestaurant } from "@/api/RestaurantApi";
 import MenuItem from "@/components/MenuItem";
 import OrderSummary from "@/components/OrderSummary";
 import RestaurantInfo from "@/components/RestaurantInfo";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Card, CardFooter } from "@/components/ui/card";
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { MenuItem as MenuItemType } from "../types";
-import CheckoutButton from "@/components/CheckoutButton";
-import { UserFormData } from "@/forms/user-profile-form/UserProfileForm";
+import { Button } from "@/components/ui/button";
+import { formatPrice } from "@/utils/format";
+import { MenuItem as MenuItemType } from "@/types";
 import { useCreateCheckoutSession } from "@/api/OrderApi";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserFormData } from "@/forms/user-profile-form/UserProfileForm";
 
 export type CartItem = {
   _id: string;
@@ -20,9 +27,9 @@ export type CartItem = {
 
 const DetailPage = () => {
   const { restaurantId } = useParams();
-  const { restaurant, isLoading } = useGetRestaurant(restaurantId);
-  const { createCheckoutSession, isLoading: isCheckoutLoading } =
-    useCreateCheckoutSession();
+  const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const { restaurant, isLoading } = useGetRestaurant(restaurantId, selectedDay);
+  const { createCheckoutSession } = useCreateCheckoutSession();
 
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     const storedCartItems = sessionStorage.getItem(`cartItems-${restaurantId}`);
@@ -84,11 +91,17 @@ const DetailPage = () => {
       return;
     }
 
+    const totalAmount = cartItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    ) + restaurant.deliveryPrice;
+
     const checkoutData = {
       cartItems: cartItems.map((cartItem) => ({
         menuItemId: cartItem._id,
         name: cartItem.name,
         quantity: cartItem.quantity.toString(),
+        price: cartItem.price,
       })),
       restaurantId: restaurant._id,
       deliveryDetails: {
@@ -98,14 +111,20 @@ const DetailPage = () => {
         country: userFormData.country,
         email: userFormData.email as string,
       },
+      totalAmount: totalAmount,
     };
 
     const data = await createCheckoutSession(checkoutData);
     window.location.href = data.url;
   };
 
+  const getTotalCost = (cartItems: CartItem[]) => {
+    const totalCost = cartItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    return totalCost;
+  };
+
   if (isLoading || !restaurant) {
-    return "Loading...";
+    return <div>Loading...</div>;
   }
 
   return (
@@ -120,29 +139,55 @@ const DetailPage = () => {
         <div className="flex flex-col gap-4">
           <RestaurantInfo restaurant={restaurant} />
           <span className="text-2xl font-bold tracking-tight">Menu</span>
-          {restaurant.menuItems.map((menuItem) => (
-            <MenuItem
-              menuItem={menuItem}
-              addToCart={() => addToCart(menuItem)}
-            />
-          ))}
-        </div>
-
-        <div>
-          <Card>
-            <OrderSummary
-              restaurant={restaurant}
-              cartItems={cartItems}
-              removeFromCart={removeFromCart}
-            />
-            <CardFooter>
-              <CheckoutButton
-                disabled={cartItems.length === 0}
-                onCheckout={onCheckout}
-                isLoading={isCheckoutLoading}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Select Day:</span>
+            <Select
+              value={selectedDay}
+              onValueChange={(value) => setSelectedDay(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Monday">Monday</SelectItem>
+                <SelectItem value="Tuesday">Tuesday</SelectItem>
+                <SelectItem value="Wednesday">Wednesday</SelectItem>
+                <SelectItem value="Thursday">Thursday</SelectItem>
+                <SelectItem value="Friday">Friday</SelectItem>
+                <SelectItem value="Saturday">Saturday</SelectItem>
+                <SelectItem value="Sunday">Sunday</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {restaurant.menuItems.map((menuItem) => (
+              <MenuItem
+                key={menuItem._id}
+                menuItem={menuItem}
+                addToCart={() => addToCart(menuItem)}
               />
-            </CardFooter>
-          </Card>
+            ))}
+          </div>
+        </div>
+        <div>
+          <OrderSummary
+            restaurant={restaurant}
+            cartItems={cartItems}
+            removeFromCart={removeFromCart}
+          />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg">Total Cost</h3>
+              <h3 className="font-bold text-lg">{formatPrice(getTotalCost(cartItems))}</h3>
+            </div>
+            <Button
+              onClick={() => onCheckout({} as UserFormData)}
+              disabled={cartItems.length === 0}
+              className="bg-orange-500"
+            >
+              Checkout
+            </Button>
+          </div>
         </div>
       </div>
     </div>

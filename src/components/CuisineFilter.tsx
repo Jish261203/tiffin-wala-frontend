@@ -48,17 +48,17 @@ const CuisineFilter = ({
           .map((cuisine) => {
             const isSelected = selectedCuisines.includes(cuisine);
             return (
-              <div className="flex">
+              <div key={cuisine} className="flex items-center space-x-2">
                 <input
-                  id={`cuisine_${cuisine}`}
                   type="checkbox"
-                  className="hidden"
+                  id={cuisine}
                   value={cuisine}
                   checked={isSelected}
                   onChange={handleCuisinesChange}
+                  className="rounded"
                 />
                 <Label
-                  htmlFor={`cuisine_${cuisine}`}
+                  htmlFor={cuisine}
                   className={`flex flex-1 items-center cursor-pointer text-sm rounded-full px-4 py-2 font-semibold ${
                     isSelected
                       ? "border border-green-600 text-green-600"
