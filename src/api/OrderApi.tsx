@@ -116,3 +116,46 @@ export const useCreateCheckoutSession = () => {
 
   return { createCheckoutSession, isLoading };
 };
+
+export const useUpdateOrder = () => {
+  const { getAccessTokenSilently } = useAuth0();
+
+  const updateOrderRequest = async (updateData: {
+    orderId: string;
+    status: string;
+  }) => {
+    const accessToken = await getAccessTokenSilently();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/order/${updateData.orderId}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: updateData.status }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update order status");
+    }
+
+    return response.json();
+  };
+
+  const {
+    mutateAsync: updateOrder,
+    isLoading,
+    error,
+    reset,
+  } = useMutation(updateOrderRequest);
+
+  if (error) {
+    toast.error(error.toString());
+    reset();
+  }
+
+  return { updateOrder, isLoading };
+};

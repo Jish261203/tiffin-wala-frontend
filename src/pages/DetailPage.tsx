@@ -17,6 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserFormData } from "@/forms/user-profile-form/UserProfileForm";
+import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarDays, Clock, ShoppingCart } from "lucide-react";
 
 export type CartItem = {
   _id: string;
@@ -124,73 +127,139 @@ const DetailPage = () => {
   };
 
   if (isLoading || !restaurant) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-col gap-10 p-4 md:p-8">
+        <Skeleton className="h-[300px] w-full rounded-lg" />
+        <div className="grid md:grid-cols-[4fr_2fr] gap-5">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-[200px] w-full rounded-lg" />
+            <Skeleton className="h-[40px] w-[200px] rounded-lg" />
+            <div className="grid md:grid-cols-2 gap-4">
+              {[...Array(6)].map((_, index) => (
+                <Skeleton key={index} className="h-[200px] w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+          <Skeleton className="h-[400px] w-full rounded-lg" />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-10">
-      <AspectRatio ratio={16 / 5}>
-        <img
-          src={restaurant.imageUrl}
-          className="rounded-md object-cover h-full w-full"
-        />
-      </AspectRatio>
-      <div className="grid md:grid-cols-[4fr_2fr] gap-5 md:px-32">
-        <div className="flex flex-col gap-4">
-          <RestaurantInfo restaurant={restaurant} />
-          <span className="text-2xl font-bold tracking-tight">Menu</span>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Select Day:</span>
-            <Select
-              value={selectedDay}
-              onValueChange={(value) => setSelectedDay(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a day" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Monday">Monday</SelectItem>
-                <SelectItem value="Tuesday">Tuesday</SelectItem>
-                <SelectItem value="Wednesday">Wednesday</SelectItem>
-                <SelectItem value="Thursday">Thursday</SelectItem>
-                <SelectItem value="Friday">Friday</SelectItem>
-                <SelectItem value="Saturday">Saturday</SelectItem>
-                <SelectItem value="Sunday">Sunday</SelectItem>
-              </SelectContent>
-            </Select>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col gap-10 p-4 md:p-8"
+    >
+      <motion.div
+        initial={{ y: -20 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative"
+      >
+        <AspectRatio ratio={16 / 5}>
+          <img
+            src={restaurant.imageUrl}
+            className="rounded-xl object-cover h-full w-full shadow-lg"
+            alt={restaurant.restaurantName}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-xl" />
+          <div className="absolute bottom-0 left-0 p-6 text-white">
+            <h1 className="text-4xl font-bold mb-2">{restaurant.restaurantName}</h1>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <CalendarDays size={16} />
+                <span>{restaurant.cuisines.join(", ")}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock size={16} />
+                <span>{restaurant.estimatedDeliveryTime} mins</span>
+              </div>
+            </div>
           </div>
+        </AspectRatio>
+      </motion.div>
+
+      <div className="grid md:grid-cols-[4fr_2fr] gap-5">
+        <motion.div 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-col gap-4"
+        >
+          <RestaurantInfo restaurant={restaurant} />
+          
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold tracking-tight">Menu</h2>
+            <div className="flex items-center gap-2">
+              <CalendarDays className="text-orange-500" size={20} />
+              <Select
+                value={selectedDay}
+                onValueChange={(value) => setSelectedDay(value)}
+              >
+                <SelectTrigger className="w-[180px] bg-white">
+                  <SelectValue placeholder="Select a day" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                    <SelectItem key={day} value={day}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
-            {restaurant.menuItems.map((menuItem) => (
-              <MenuItem
+            {restaurant.menuItems.map((menuItem, index) => (
+              <motion.div
                 key={menuItem._id}
-                menuItem={menuItem}
-                addToCart={() => addToCart(menuItem)}
-              />
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <MenuItem
+                  menuItem={menuItem}
+                  addToCart={() => addToCart(menuItem)}
+                />
+              </motion.div>
             ))}
           </div>
-        </div>
-        <div>
+        </motion.div>
+
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="space-y-4"
+        >
           <OrderSummary
             restaurant={restaurant}
             cartItems={cartItems}
             removeFromCart={removeFromCart}
           />
-          <div className="flex flex-col gap-2">
+          <div className="sticky top-4 space-y-4 bg-white p-4 rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-lg">Total Cost</h3>
-              <h3 className="font-bold text-lg">{formatPrice(getTotalCost(cartItems))}</h3>
+              <h3 className="font-bold text-lg text-orange-500">
+                {formatPrice(getTotalCost(cartItems))}
+              </h3>
             </div>
             <Button
               onClick={() => onCheckout({} as UserFormData)}
               disabled={cartItems.length === 0}
-              className="bg-orange-500"
+              className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-lg"
             >
-              Checkout
+              <ShoppingCart className="mr-2" size={20} />
+              {cartItems.length > 0 ? `Checkout (${cartItems.length})` : "Checkout"}
             </Button>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

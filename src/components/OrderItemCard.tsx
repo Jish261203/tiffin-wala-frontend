@@ -25,11 +25,14 @@ const OrderItemCard = ({ order }: Props) => {
   };
 
   const getTotalAmount = () => {
-    const itemsTotal = order.cartItems.reduce(
-      (total, item) => total + item.menuItem.price * item.quantity,
-      0
-    );
-    return itemsTotal + order.deliveryPrice;
+    const itemsTotal = order.cartItems.reduce((total, item) => {
+      const menuItem = order.restaurant.menuItems.find(
+        (mi) => mi._id === item.menuItemId
+      );
+      const quantity = parseInt(item.quantity) || 0;
+      return total + (menuItem?.price || 0) * quantity;
+    }, 0);
+    return itemsTotal + (order.restaurant.deliveryPrice || 0);
   };
 
   return (
@@ -37,7 +40,7 @@ const OrderItemCard = ({ order }: Props) => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex gap-2">
-            <span>Order from {order.restaurant.name}</span>
+            <span>Order from {order.restaurant?.restaurantName || 'Unknown Restaurant'}</span>
             <Badge>{order.status}</Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -64,20 +67,28 @@ const OrderItemCard = ({ order }: Props) => {
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h3 className="font-bold">Items</h3>
-          {order.cartItems.map((item) => (
-            <div key={item.menuItem._id} className="flex justify-between">
-              <span>
-                {item.menuItem.name} x {item.quantity}
-              </span>
-              <span>{formatPrice(item.menuItem.price * item.quantity)}</span>
-            </div>
-          ))}
+          {order.cartItems.map((item) => {
+            const menuItem = order.restaurant.menuItems.find(
+              (mi) => mi._id === item.menuItemId
+            );
+            const quantity = parseInt(item.quantity) || 0;
+            const itemPrice = menuItem?.price || 0;
+            
+            return (
+              <div key={item.menuItemId} className="flex justify-between">
+                <span>
+                  {item.name} x {quantity}
+                </span>
+                <span>{formatPrice(itemPrice * quantity)}</span>
+              </div>
+            );
+          })}
         </div>
         <div className="flex flex-col gap-2">
           <h3 className="font-bold">Delivery Details</h3>
           <div className="flex justify-between">
             <span>Delivery Fee</span>
-            <span>{formatPrice(order.deliveryPrice)}</span>
+            <span>{formatPrice(order.restaurant.deliveryPrice || 0)}</span>
           </div>
           <div className="flex justify-between">
             <span className="font-bold">Total</span>
