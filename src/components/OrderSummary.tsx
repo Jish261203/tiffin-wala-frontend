@@ -20,9 +20,15 @@ type Props = {
     price: number;
     quantity: number;
   }) => void;
+  updateCartItemQuantity: (itemId: string, newQuantity: number) => void;
 };
 
-const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
+const OrderSummary = ({ 
+  restaurant, 
+  cartItems, 
+  removeFromCart,
+  updateCartItemQuantity 
+}: Props) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const getTotalCost = () => {
@@ -50,7 +56,7 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent>
         <AnimatePresence>
           {cartItems.map((item) => (
             <motion.div
@@ -66,6 +72,8 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 hover:bg-orange-100 hover:text-orange-500"
+                    onClick={() => updateCartItemQuantity(item._id, item.quantity - 1)}
+                    disabled={item.quantity <= 1}
                   >
                     <Minus size={14} />
                   </Button>
@@ -74,6 +82,7 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 hover:bg-orange-100 hover:text-orange-500"
+                    onClick={() => updateCartItemQuantity(item._id, item.quantity + 1)}
                   >
                     <Plus size={14} />
                   </Button>
@@ -85,7 +94,7 @@ const OrderSummary = ({ restaurant, cartItems, removeFromCart }: Props) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <span className="font-semibold text-orange-500">
                   {formatPrice(item.price * item.quantity)}
                 </span>

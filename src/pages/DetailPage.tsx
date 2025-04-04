@@ -20,6 +20,8 @@ import { UserFormData } from "@/forms/user-profile-form/UserProfileForm";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, Clock, ShoppingCart } from "lucide-react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { toast } from "sonner";
 
 export type CartItem = {
   _id: string;
@@ -33,6 +35,7 @@ const DetailPage = () => {
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
   const { restaurant, isLoading } = useGetRestaurant(restaurantId, selectedDay);
   const { createCheckoutSession } = useCreateCheckoutSession();
+  const { user } = useAuth0();
 
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     const storedCartItems = sessionStorage.getItem(`cartItems-${restaurantId}`);
@@ -89,41 +92,75 @@ const DetailPage = () => {
     });
   };
 
-  const onCheckout = async (userFormData: UserFormData) => {
-    if (!restaurant) {
-      return;
-    }
+  const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    setCartItems((prevCartItems) => {
+      const updatedCartItems = prevCartItems.map((item) =>
+        item._id === itemId ? { ...item, quantity: newQuantity } : item
+      );
 
-    const totalAmount = cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    ) + restaurant.deliveryPrice;
+      sessionStorage.setItem(
+        `cartItems-${restaurantId}`,
+        JSON.stringify(updatedCartItems)
+      );
 
-    const checkoutData = {
-      cartItems: cartItems.map((cartItem) => ({
-        menuItemId: cartItem._id,
-        name: cartItem.name,
-        quantity: cartItem.quantity.toString(),
-        price: cartItem.price,
-      })),
-      restaurantId: restaurant._id,
-      deliveryDetails: {
-        name: userFormData.name,
-        addressLine1: userFormData.addressLine1,
-        city: userFormData.city,
-        country: userFormData.country,
-        email: userFormData.email as string,
-      },
-      totalAmount: totalAmount,
-    };
-
-    const data = await createCheckoutSession(checkoutData);
-    window.location.href = data.url;
+      return updatedCartItems;
+    });
   };
 
   const getTotalCost = (cartItems: CartItem[]) => {
-    const totalCost = cartItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
-    return totalCost;
+    const itemsTotal = cartItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    return restaurant ? itemsTotal + restaurant.deliveryPrice : itemsTotal;
+  };
+
+  const onCheckout = async () => {
+    if (!restaurant || !user) {
+      toast.error("Please login to checkout");
+      return;
+    }
+
+    if (!user.email) {
+      toast.error("Please update your email in your profile");
+      return;
+    }
+
+    try {
+      const totalAmount = getTotalCost(cartItems);
+
+      const checkoutData = {
+        cartItems: cartItems.map((cartItem) => ({
+          menuItemId: cartItem._id,
+          name: cartItem.name,
+          quantity: cartItem.quantity.toString(),
+          price: cartItem.price,
+        })),
+        restaurantId: restaurant._id,
+        deliveryDetails: {
+          email: user.email,
+          name: user.name || "Guest",
+          addressLine1: user.addressLine1 || "Address needed",
+          city: user.city || "City needed",
+          country: user.country || "Country needed",
+        },
+        totalAmount: totalAmount,
+      };
+
+      toast.promise(createCheckoutSession(checkoutData), {
+        loading: 'Creating checkout session...',
+        success: (data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return 'Redirecting to checkout...';
+          }
+          throw new Error('No checkout URL received');
+        },
+        error: 'Failed to create checkout session'
+      });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error("Something went wrong during checkout");
+    }
   };
 
   if (isLoading || !restaurant) {
@@ -240,6 +277,7 @@ const DetailPage = () => {
             restaurant={restaurant}
             cartItems={cartItems}
             removeFromCart={removeFromCart}
+            updateCartItemQuantity={updateCartItemQuantity}
           />
           <div className="sticky top-4 space-y-4 bg-white p-4 rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
@@ -249,7 +287,7 @@ const DetailPage = () => {
               </h3>
             </div>
             <Button
-              onClick={() => onCheckout({} as UserFormData)}
+              onClick={onCheckout}
               disabled={cartItems.length === 0}
               className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-lg"
             >
