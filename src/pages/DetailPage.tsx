@@ -128,14 +128,33 @@ const DetailPage = () => {
     try {
       const totalAmount = getTotalCost(cartItems);
 
-      const checkoutData = {
-        cartItems: cartItems.map((cartItem) => ({
-          menuItemId: cartItem._id,
-          name: cartItem.name,
+      // Add logging to debug menu items
+      console.log("Restaurant menu items:", restaurant.menuItems);
+      console.log("Cart items:", cartItems);
+
+      // Find the menu items from restaurant's menu with proper ID comparison
+      const cartItemsWithMenuData = cartItems.map(cartItem => {
+        const menuItem = restaurant.menuItems.find(item => 
+          item._id.toString() === cartItem._id.toString()
+        );
+        
+        if (!menuItem) {
+          console.error(`Failed to find menu item. Cart item ID: ${cartItem._id}`);
+          console.error(`Available menu item IDs:`, restaurant.menuItems.map(item => item._id));
+          throw new Error(`Menu item not found: ${cartItem._id}. Please try refreshing the page.`);
+        }
+
+        return {
+          menuItemId: menuItem._id.toString(),
+          name: menuItem.name,
           quantity: cartItem.quantity.toString(),
-          price: cartItem.price,
-        })),
-        restaurantId: restaurant._id,
+          price: menuItem.price
+        };
+      });
+
+      const checkoutData = {
+        cartItems: cartItemsWithMenuData,
+        restaurantId: restaurant._id.toString(),
         deliveryDetails: {
           email: user.email,
           name: user.name || "Guest",
@@ -155,11 +174,14 @@ const DetailPage = () => {
           }
           throw new Error('No checkout URL received');
         },
-        error: 'Failed to create checkout session'
+        error: (error) => {
+          console.error('Checkout error:', error);
+          return error.message || 'Failed to create checkout session';
+        }
       });
     } catch (error) {
       console.error("Checkout error:", error);
-      toast.error("Something went wrong during checkout");
+      toast.error(error instanceof Error ? error.message : "Something went wrong during checkout");
     }
   };
 

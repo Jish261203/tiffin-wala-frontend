@@ -25,14 +25,7 @@ const OrderItemCard = ({ order }: Props) => {
   };
 
   const getTotalAmount = () => {
-    const itemsTotal = order.cartItems.reduce((total, item) => {
-      const menuItem = order.restaurant.menuItems.find(
-        (mi) => mi._id === item.menuItemId
-      );
-      const quantity = parseInt(item.quantity) || 0;
-      return total + (menuItem?.price || 0) * quantity;
-    }, 0);
-    return itemsTotal + (order.restaurant.deliveryPrice || 0);
+    return order.totalAmount || 0;
   };
 
   return (
@@ -66,34 +59,23 @@ const OrderItemCard = ({ order }: Props) => {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <h3 className="font-bold">Items</h3>
-          {order.cartItems.map((item) => {
-            const menuItem = order.restaurant.menuItems.find(
-              (mi) => mi._id === item.menuItemId
-            );
-            const quantity = parseInt(item.quantity) || 0;
-            const itemPrice = menuItem?.price || 0;
-            
-            return (
-              <div key={item.menuItemId} className="flex justify-between">
-                <span>
-                  {item.name} x {quantity}
-                </span>
-                <span>{formatPrice(itemPrice * quantity)}</span>
-              </div>
-            );
-          })}
+          <h3 className="font-bold">Items:</h3>
+          {order.cartItems.map((item) => (
+            <div key={item.menuItemId} className="flex justify-between">
+              <span>
+                {item.quantity}x {item.name}
+              </span>
+              <span>{formatPrice(Number(item.price) * Number(item.quantity))}</span>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold">Delivery Details</h3>
-          <div className="flex justify-between">
-            <span>Delivery Fee</span>
-            <span>{formatPrice(order.restaurant.deliveryPrice || 0)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-bold">Total</span>
-            <span className="font-bold">{formatPrice(getTotalAmount())}</span>
-          </div>
+        <div className="flex justify-between border-t pt-2">
+          <span className="font-bold">Delivery Fee:</span>
+          <span>{formatPrice(order.restaurant.deliveryPrice || 0)}</span>
+        </div>
+        <div className="flex justify-between border-t pt-2">
+          <span className="font-bold">Total Amount:</span>
+          <span className="font-bold">{formatPrice(getTotalAmount())}</span>
         </div>
       </CardContent>
     </Card>

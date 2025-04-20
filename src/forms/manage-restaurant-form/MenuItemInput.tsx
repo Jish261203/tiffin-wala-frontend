@@ -15,57 +15,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
   index: number;
-  removeMenuItem: () => void;
+  removeMenuItem?: () => void;
 };
 
 const MenuItemInput = ({ index, removeMenuItem }: Props) => {
   const { control } = useFormContext();
 
   return (
-    <div className="flex flex-row items-end gap-2">
+    <div className="space-y-4">
       <FormField
         control={control}
         name={`menuItems.${index}.name`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-1">
-              Name <FormMessage />
-            </FormLabel>
+            <FormLabel>Item Name</FormLabel>
             <FormControl>
-              <Input
-                {...field}
-                placeholder="Cheese Pizza"
-                className="bg-white"
-              />
+              <Input {...field} placeholder="Enter item name" />
             </FormControl>
+            <FormMessage />
           </FormItem>
         )}
       />
+
       <FormField
         control={control}
         name={`menuItems.${index}.price`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-1">
-              Price (£) <FormMessage />
-            </FormLabel>
+            <FormLabel>Price (₹)</FormLabel>
             <FormControl>
-              <Input {...field} placeholder="8.00" className="bg-white" />
+              <Input 
+                {...field} 
+                type="number" 
+                placeholder="Enter price"
+                onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+              />
             </FormControl>
+            <FormMessage />
           </FormItem>
         )}
       />
+
+      <FormField
+        control={control}
+        name={`menuItems.${index}.description`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description</FormLabel>
+            <FormControl>
+              <Textarea {...field} placeholder="Enter item description" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       <FormField
         control={control}
         name={`menuItems.${index}.day`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-1">
-              Day <FormMessage />
-            </FormLabel>
+            <FormLabel>Day</FormLabel>
             <Select 
               onValueChange={field.onChange} 
               value={field.value || "Monday"}
@@ -85,16 +99,20 @@ const MenuItemInput = ({ index, removeMenuItem }: Props) => {
                 <SelectItem value="Sunday">Sunday</SelectItem>
               </SelectContent>
             </Select>
+            <FormMessage />
           </FormItem>
         )}
       />
-      <Button
-        type="button"
-        onClick={removeMenuItem}
-        className="bg-red-500 max-h-fit"
-      >
-        Remove
-      </Button>
+      
+      {removeMenuItem && (
+        <Button
+          type="button"
+          onClick={removeMenuItem}
+          variant="destructive"
+        >
+          Remove
+        </Button>
+      )}
     </div>
   );
 };

@@ -9,9 +9,15 @@ import {
 } from "./ui/select";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import { Button } from "./ui/button";
+import { Receipt } from "lucide-react";
+import { formatPrice } from "@/utils/format";
+import InvoiceModal from "./InvoiceModal";
 
 type Props = {
   orders: Order[];
+  showInvoiceButton?: boolean;
+  onViewInvoice?: (orderId: string) => void;
 };
 
 const ORDER_STATUS_LIST: OrderStatus[] = [
@@ -29,31 +35,10 @@ const SORT_OPTIONS = [
   { label: "Price: Low to High", value: "priceAsc" },
 ];
 
-// Format price from paise to rupees with proper formatting
-const formatPrice = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-  }).format(amount / 100);
-};
-
-const calculateOrderTotal = (order: Order): number => {
-  const itemsTotal = order.cartItems.reduce((total, item) => {
-    const menuItem = order.restaurant.menuItems.find(
-      (mi) => mi._id === item.menuItemId
-    );
-    const quantity = parseInt(item.quantity) || 0;
-    const price = menuItem?.price || 0;
-    return total + (quantity * price);
-  }, 0);
-
-  return itemsTotal + (order.restaurant.deliveryPrice || 0);
-};
-
-const OrderHistoryList = ({ orders }: Props) => {
+const OrderHistoryList = ({ orders, showInvoiceButton = true, onViewInvoice }: Props) => {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [sortOption, setSortOption] = useState("newest");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -70,6 +55,24 @@ const OrderHistoryList = ({ orders }: Props) => {
       default:
         return "bg-gray-200 text-gray-700";
     }
+  };
+
+  const calculateOrderTotal = (order: Order) => {
+    if (order.totalAmount && order.totalAmount > 0) {
+      return order.totalAmount;
+    }
+    
+    const itemsTotal = order.cartItems.reduce(
+      (total, item) => {
+        const price = item.price || 0;
+        const quantity = parseInt(item.quantity) || 1;
+        return total + (price * quantity);
+      },
+      0
+    );
+    
+    const deliveryPrice = order.restaurant?.deliveryPrice || 0;
+    return itemsTotal + deliveryPrice;
   };
 
   const filteredAndSortedOrders = orders
@@ -126,76 +129,77 @@ const OrderHistoryList = ({ orders }: Props) => {
       </div>
 
       <div className="space-y-4">
-        {filteredAndSortedOrders.map((order) => {
-          const orderTotal = calculateOrderTotal(order);
-          
-          return (
-            <div
-              key={order._id}
-              className="bg-white rounded-lg shadow-md p-4 space-y-4"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold text-lg">
-                    {order.restaurant.restaurantName}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </p>
-                </div>
-                <Badge className={getStatusColor(order.status)}>
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                </Badge>
+        {filteredAndSortedOrders.map((order) => (
+          <div
+            key={order._id}
+            className="bg-white rounded-lg shadow-md p-6 space-y-4"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {order.restaurant.restaurantName}
+                </h3>
+                <p className="text-gray-600">
+                  Order #{order._id.substring(0, 8)}
+                </p>
+                <p className="text-gray-600">
+                  {new Date(order.createdAt).toLocaleDateString()}
+                </p>
               </div>
-
-              <div className="space-y-2">
-                {order.cartItems.map((item) => {
-                  const menuItem = order.restaurant.menuItems.find(
-                    (mi) => mi._id === item.menuItemId
-                  );
-                  const quantity = parseInt(item.quantity) || 0;
-                  const price = menuItem?.price || 0;
-                  const itemTotal = quantity * price;
-
-                  return (
-                    <div key={item.menuItemId} className="flex justify-between text-sm">
-                      <span>
-                        {item.name} x {item.quantity}
-                      </span>
-                      <span>{formatPrice(itemTotal)}</span>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>Delivery Fee</span>
-                  <span>{formatPrice(order.restaurant.deliveryPrice || 0)}</span>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex justify-between items-center">
-                <div className="text-sm">
-                  <p>Delivery to: {order.deliveryDetails.addressLine1}</p>
-                  <p>{order.deliveryDetails.city}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Total Amount:</p>
-                  <p className="font-bold">
-                    {formatPrice(orderTotal)}
-                  </p>
-                </div>
-              </div>
+              <Badge className={getStatusColor(order.status)}>
+                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              </Badge>
             </div>
-          );
-        })}
 
-        {filteredAndSortedOrders.length === 0 && (
-          <div className="text-center py-4 text-gray-500">
-            No orders found for the selected filter.
+            <div className="space-y-2">
+              {order.cartItems.map((item, index) => {
+                const itemPrice = item.price || 0;
+                const quantity = parseInt(item.quantity) || 1;
+                const total = itemPrice * quantity;
+                
+                return (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Separator />
+
+            <div className="flex justify-between items-center">
+              <div className="text-lg font-semibold">
+                Total: {formatPrice(calculateOrderTotal(order))}
+              </div>
+              {showInvoiceButton && (
+                <Button
+                  onClick={() => {
+                    if (onViewInvoice) {
+                      onViewInvoice(order._id);
+                    } else {
+                      setSelectedOrderId(order._id);
+                    }
+                  }}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Receipt size={20} />
+                  View Invoice
+                </Button>
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </div>
+
+      <InvoiceModal
+        orderId={selectedOrderId || ""}
+        isOpen={!!selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
+      />
     </div>
   );
 };
